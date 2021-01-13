@@ -1,7 +1,10 @@
-from django.shortcuts import render
-
-# Create your views here.
-from django.shortcuts import render
+'''
+我們用django來寫line機器人背後的程式，詳細的django環境建置、如何與line機器人連接我會再錄成影片
+現在先解釋views.py檔案裡在幹嘛~~~
+'''
+# render是要將元素渲染到網頁上讓它呈現，但是我們這裡只有要將資料打包回傳給line機器人而已，所以暫時用不到render
+# from django.shortcuts import render
+# 前面建置環境時載過這些套件了
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -12,26 +15,89 @@ from linebot.models import MessageEvent, TextSendMessage
 
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
-import requests
+
 import csv
 import pandas as pd
-import json
 from random import choice
 
-# --------
+# ---------richmenu---------------
+import requests
+import json
 
-def csv_(name,orient='split'):
-    with open('D:/NCKU/109-1/computational_thinking/code/final_record.csv', encoding="utf-8") as response:
-        #寫入userLineID
-        # writer = csv.writer(response)
-        csv_table = csv.reader(response)
-        # header = next(csv_table)  # 略過第一個row
-        df = pd.DataFrame(csv_table)  # 轉成dataframe
-        df.columns = df.iloc[0]  # 第一個row當作column name
-        df = df.reindex(df.index.drop(0))  # drop掉被拿來當column name的那一列
-        #-----前面不用動
-        out_df = df[df.loc[:, "NAME"] == name]
-    return out_df['hw_finished'].values[0] # json.loads(df_json)
+headers = {"Authorization":"Bearer 6DUyjBVG+UgqDr9uEvtVljCVFZMOTcLpay8EHJf3q7mdPwwvy5e1busDaXgLm3ptMiOEugyFLPqvH8I3+7i19X2hjXTeXm3PFSEAyvmAfYUGdpwRj8+CVv7wrBUqNhc9RZY0ec0SPFXHqf0yXJp2NQdB04t89/1O/w1cDnyilFU=","Content-Type":"application/json"}
+
+body = {
+    "size": {"width": 2500, "height": 843},
+    "selected": "true",
+    "name": "功能選單",
+    "chatBarText": "查看更多功能",
+    "areas":[
+    {
+      "bounds": { "x": 0, "y": 0, "width": 839, "height": 843 },
+      "action": { "type": "message", "text": "傳提醒" }
+    },
+    {
+      "bounds": { "x": 838, "y": 0, "width": 829, "height": 843 },
+      "action": { "type": "message", "text": "查詢功能" }
+    },
+    {
+      "bounds": { "x": 1662, "y": 0, "width": 838, "height": 843 },
+      "action": { "type": "message", "text": "講笑話" }
+    }
+    ]
+  }
+
+req = requests.request('POST', 'https://api.line.me/v2/bot/richmenu',
+                       headers=headers,data=json.dumps(body).encode('utf-8'))
+
+# print(req.text)
+print(req.text[14:57])
+a = req.text[15:56]
+
+# ---
+from linebot import (
+    LineBotApi, WebhookHandler
+)
+
+line_bot_api = LineBotApi('6DUyjBVG+UgqDr9uEvtVljCVFZMOTcLpay8EHJf3q7mdPwwvy5e1busDaXgLm3ptMiOEugyFLPqvH8I3+7i19X2hjXTeXm3PFSEAyvmAfYUGdpwRj8+CVv7wrBUqNhc9RZY0ec0SPFXHqf0yXJp2NQdB04t89/1O/w1cDnyilFU=')
+
+with open("D:/NCKU/109-1/computational_thinking/code/controller.jpg", 'rb') as f:
+    line_bot_api.set_rich_menu_image(a, "image/jpeg", f)
+
+# ---
+import requests
+
+headers = {"Authorization":"Bearer 6DUyjBVG+UgqDr9uEvtVljCVFZMOTcLpay8EHJf3q7mdPwwvy5e1busDaXgLm3ptMiOEugyFLPqvH8I3+7i19X2hjXTeXm3PFSEAyvmAfYUGdpwRj8+CVv7wrBUqNhc9RZY0ec0SPFXHqf0yXJp2NQdB04t89/1O/w1cDnyilFU=","Content-Type":"application/json"}
+
+req = requests.request('POST', 'https://api.line.me/v2/bot/user/all/richmenu/'+a,
+                       headers=headers)
+
+print(req.text)
+
+
+# ----------richmenu-end-----------------------
+
+
+# --------function區塊---------------------
+
+'''
+一個function只做一件事情！！！千萬不要把好幾件事寫在同一個function裡，保持每一項功能乾淨獨立，
+日後需要改某項功能才不會動到其他的功能。
+如果能力夠也可以寫成class！
+'''
+# #作業
+# def csv_(name): #orient='split'
+#     with open('D:/NCKU/109-1/computational_thinking/code/final_record.csv', encoding="utf-8") as response:
+#         #寫入userLineID
+#         # writer = csv.writer(response)
+#         csv_table = csv.reader(response)
+#         # header = next(csv_table)  # 略過第一個row
+#         df = pd.DataFrame(csv_table)  # 轉成dataframe
+#         df.columns = df.iloc[0]  # 第一個row當作column name
+#         df = df.reindex(df.index.drop(0))  # drop掉被拿來當column name的那一列
+#         #-----前面不用動
+#         out_df = df[df.loc[:, "NAME"] == name]
+#     return out_df['hw_finished'].values[0] # json.loads(df_json)
 
 
 def search_grade(LINE_ID):
@@ -115,6 +181,7 @@ def hw_finished_percent(LINE_ID):
         except:
             finished_percent = '你還沒有輸入名字喔！請輸入名字，格式：我是OOO'
     return finished_percent
+
 
 def hw_unfinished(LINE_ID):
     with open('D:/NCKU/109-1/computational_thinking/code/final_record.csv', encoding="utf-8") as response:

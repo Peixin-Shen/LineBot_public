@@ -26,7 +26,7 @@ SECRET_KEY = '5bdkxv&q$x*(s9!i))^y3z*)@jq&#5uk%ttp#!yiwwpm^88v(r'
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'debcbfcb5f9f.ngrok.io'
+    '878e750ec191.ngrok.io'
 ] #line機器人允許的網域名稱
 
 # Line
