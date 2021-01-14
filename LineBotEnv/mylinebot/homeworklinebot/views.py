@@ -4,6 +4,7 @@
 '''
 # render是要將元素渲染到網頁上讓它呈現，但是我們這裡只有要將資料打包回傳給line機器人而已，所以暫時用不到render
 # from django.shortcuts import render
+
 # 前面建置環境時載過這些套件了
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
@@ -11,18 +12,25 @@ from django.conf import settings
 
 from linebot import LineBotApi, WebhookParser
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
-from linebot.models import MessageEvent, TextSendMessage
+from linebot.models import (
+    MessageEvent,
+    TextSendMessage,
+    TemplateSendMessage,
+    ButtonsTemplate,
+    MessageTemplateAction
+)
 
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
 
 import csv
 import pandas as pd
-from random import choice
-
-# ---------richmenu---------------
 import requests
 import json
+import numpy as np
+import random
+
+# ---------richmenu---------------
 
 headers = {"Authorization":"Bearer 6DUyjBVG+UgqDr9uEvtVljCVFZMOTcLpay8EHJf3q7mdPwwvy5e1busDaXgLm3ptMiOEugyFLPqvH8I3+7i19X2hjXTeXm3PFSEAyvmAfYUGdpwRj8+CVv7wrBUqNhc9RZY0ec0SPFXHqf0yXJp2NQdB04t89/1O/w1cDnyilFU=","Content-Type":"application/json"}
 
@@ -49,57 +57,29 @@ body = {
 
 req = requests.request('POST', 'https://api.line.me/v2/bot/richmenu',
                        headers=headers,data=json.dumps(body).encode('utf-8'))
-
-# print(req.text)
-print(req.text[14:57])
 a = req.text[15:56]
-
-# ---
-from linebot import (
-    LineBotApi, WebhookHandler
-)
 
 line_bot_api = LineBotApi('6DUyjBVG+UgqDr9uEvtVljCVFZMOTcLpay8EHJf3q7mdPwwvy5e1busDaXgLm3ptMiOEugyFLPqvH8I3+7i19X2hjXTeXm3PFSEAyvmAfYUGdpwRj8+CVv7wrBUqNhc9RZY0ec0SPFXHqf0yXJp2NQdB04t89/1O/w1cDnyilFU=')
 
 with open("D:/NCKU/109-1/computational_thinking/code/controller.jpg", 'rb') as f:
     line_bot_api.set_rich_menu_image(a, "image/jpeg", f)
 
-# ---
-import requests
-
-headers = {"Authorization":"Bearer 6DUyjBVG+UgqDr9uEvtVljCVFZMOTcLpay8EHJf3q7mdPwwvy5e1busDaXgLm3ptMiOEugyFLPqvH8I3+7i19X2hjXTeXm3PFSEAyvmAfYUGdpwRj8+CVv7wrBUqNhc9RZY0ec0SPFXHqf0yXJp2NQdB04t89/1O/w1cDnyilFU=","Content-Type":"application/json"}
-
 req = requests.request('POST', 'https://api.line.me/v2/bot/user/all/richmenu/'+a,
                        headers=headers)
-
-print(req.text)
-
 
 # ----------richmenu-end-----------------------
 
 
-# --------function區塊---------------------
+
+# ---------function區塊-------------------------
 
 '''
 一個function只做一件事情！！！千萬不要把好幾件事寫在同一個function裡，保持每一項功能乾淨獨立，
 日後需要改某項功能才不會動到其他的功能。
 如果能力夠也可以寫成class！
 '''
-# #作業
-# def csv_(name): #orient='split'
-#     with open('D:/NCKU/109-1/computational_thinking/code/final_record.csv', encoding="utf-8") as response:
-#         #寫入userLineID
-#         # writer = csv.writer(response)
-#         csv_table = csv.reader(response)
-#         # header = next(csv_table)  # 略過第一個row
-#         df = pd.DataFrame(csv_table)  # 轉成dataframe
-#         df.columns = df.iloc[0]  # 第一個row當作column name
-#         df = df.reindex(df.index.drop(0))  # drop掉被拿來當column name的那一列
-#         #-----前面不用動
-#         out_df = df[df.loc[:, "NAME"] == name]
-#     return out_df['hw_finished'].values[0] # json.loads(df_json)
 
-
+# 查詢作業總成績
 def search_grade(LINE_ID):
     with open('D:/NCKU/109-1/computational_thinking/code/grade_1213.csv', encoding="utf-8") as response:
         #寫入userLineID
@@ -111,70 +91,31 @@ def search_grade(LINE_ID):
         df = df.reindex(df.index.drop(0))  # drop掉被拿來當column name的那一列
         # -----前面不用動
         try:
-            # df[df.loc[:, "line_id"] == LINE_ID ]:
             out_df = df[df.loc[:, "line_id"] == LINE_ID ]
             grade_value = out_df['Sum'].values[0]
         except:
             grade_value = '你還沒有輸入名字喔！請輸入名字，格式：我是OOO'
     return grade_value
 
-
-##寫入line_id
-def input_lineid(NAME, LINE_ID):
-    # 改成學號驗證------------------
-    with open('D:/NCKU/109-1/computational_thinking/code/final_record.csv',encoding="utf-8") as response:
+# 隨機回傳一則笑話
+def joke():
+    with open('D:/NCKU/109-1/computational_thinking/code/joke.csv', encoding="utf-8") as response:
         csv_table = csv.reader(response)
         df = pd.DataFrame(csv_table)
-        df.columns = df.iloc[0]
-        df = df.reindex(df.index.drop(0))
-        # success_message = 0
-        # print(df)
-        # print(df["ID"][1])
-        for i in range(30):
-            try:
-                if (df.loc[i + 1, 'NAME'] == NAME):
-                    df.loc[i + 1, 'LINE_ID'] = LINE_ID
-                    print(LINE_ID)
-                    success_message = '成功紀錄! 請輸入 查詢功能 ，查看可以使用的功能'
-                    break
-                else:
-                    success_message = '修課名單找不到這個名字，請重新輸入'
-            except:
-                success_message = '修課名單找不到這個名字，請重新輸入'
-        df.to_csv('D:/NCKU/109-1/computational_thinking/code/final_record.csv', index=False)
+        random_int = random.randint(0,df.shape[0]-1)
+        joke_ = df[random_int:random_int+1]
+        joke_array = np.array(joke_)
+        joke_list = joke_array[0].tolist()
+        joke_list = [x for x in joke_list if x != '']
+    return joke_list
 
-    with open('D:/NCKU/109-1/computational_thinking/code/grade_1213.csv',encoding="utf-8") as response:
-        csv_table = csv.reader(response)
-        df = pd.DataFrame(csv_table)
-        df.columns = df.iloc[0]
-        df = df.reindex(df.index.drop(0))
-        print(df)
-        print(df["ID"][1])
-        for i in range(30):
-            try:
-                if(df.loc[i + 1, 'Name'] == NAME):
-                    df.loc[i + 1, 'line_id'] = LINE_ID
-                    print(LINE_ID)
-                    # success_message = '成功紀錄! 請輸入 查詢功能 ，查看可以使用的功能'
-                    break
-            except:
-                # success_message = '修課名單找不到這個名字，請重新輸入'
-                break
-        df.to_csv('D:/NCKU/109-1/computational_thinking/code/grade_1213.csv', index=False)
-
-    return success_message
-
-
+# 查詢作業完成度
 def hw_finished_percent(LINE_ID):
     with open('D:/NCKU/109-1/computational_thinking/code/final_record.csv', encoding="utf-8") as response:
-        #寫入userLineID
-        # writer = csv.writer(response)
         csv_table = csv.reader(response)
-        # header = next(csv_table)  # 略過第一個row
-        df = pd.DataFrame(csv_table)  # 轉成dataframe
-        df.columns = df.iloc[0]  # 第一個row當作column name
-        df = df.reindex(df.index.drop(0))  # drop掉被拿來當column name的那一列
-        #以上不用動
+        df = pd.DataFrame(csv_table)
+        df.columns = df.iloc[0]
+        df = df.reindex(df.index.drop(0))
         try:
             out_df = df[df.loc[:, "LINE_ID"] == LINE_ID ]
             finished_percent = out_df['hw_finished'].values[0]
@@ -182,17 +123,14 @@ def hw_finished_percent(LINE_ID):
             finished_percent = '你還沒有輸入名字喔！請輸入名字，格式：我是OOO'
     return finished_percent
 
-
+# 查詢還沒完成的作業
 def hw_unfinished(LINE_ID):
     with open('D:/NCKU/109-1/computational_thinking/code/final_record.csv', encoding="utf-8") as response:
         csv_table = csv.reader(response)
-        # for col_names in row_csv_table:
-        # header = next(csv_table)  # 略過第一個row
-        df = pd.DataFrame(csv_table)  # 轉成dataframe
-        df.columns = df.iloc[0]  # 第一個row當作column name
-        df = df.reindex(df.index.drop(0))  # drop掉被拿來當column name的那一列
+        df = pd.DataFrame(csv_table)
+        df.columns = df.iloc[0]
+        df = df.reindex(df.index.drop(0))
         hw_unfinished_ = []
-        # 以上不用動
         try:
             out_df = df[df.loc[:, "LINE_ID"] == LINE_ID]
             h = 0
@@ -213,17 +151,52 @@ def hw_unfinished(LINE_ID):
 
     return h
 
+def name_studentID(name, studentID, LINE_ID):
+    with open('D:/NCKU/109-1/computational_thinking/code/final_record.csv', encoding="utf-8") as response:
+        csv_table = csv.reader(response)
+        df = pd.DataFrame(csv_table)
+        df.columns = df.iloc[0]
+        df = df.reindex(df.index.drop(0))
+        for i in range(30):
+
+            if (df.loc[i + 1, 'NAME'] == name):
+                if df.loc[i + 1, 'Student_ID'] == studentID:
+                    if df.loc[i + 1, 'LINE_ID'] == '':
+                        df.loc[i + 1, 'LINE_ID'] = LINE_ID
+                        success_message = '成功紀錄! 請輸入 查詢功能 ，查看可以使用的功能'
+                    elif df.loc[i + 1, 'LINE_ID'] == LINE_ID:
+                        success_message = '你已經註冊過囉！'
+                    else:
+                        success_message = '此用戶已被註冊！這不是你，請聯絡管理人'
+                else:
+                    success_message = '學號輸入錯誤，學號開頭請用大寫英文字母，請再輸入一次。格式：姓名：王小明/學號：B54012312'
+                break
+            else:
+                success_message = '修課名單找不到這個名字，請重新輸入'
+
+        df.to_csv('D:/NCKU/109-1/computational_thinking/code/final_record.csv', index=False)
+    return success_message
+
+# from django.core.handlers.wsgi import WSGIRequest
+#
+# def test(request):
+#     print(type(request))
+#     print(request.environ)   # 印出request的header資訊
+#     # 印出每一個key和value
+#     for k, v in request.environ.items():
+#         print(k, v)
+
+# ---------function區塊end----------------------
 
 
-
-
-
-
-@csrf_exempt
+# 主程式
+@csrf_exempt  # 免用csrf token
 def callback(request):
     if request.method == 'POST':
+        # test(request)
         signature = request.META['HTTP_X_LINE_SIGNATURE']
         body = request.body.decode('utf-8')
+
 
         try:
             events = parser.parse(body, signature)  # 傳入的事件
@@ -234,21 +207,49 @@ def callback(request):
 
         for event in events:
             if isinstance(event, MessageEvent):  # 如果有訊息事件
-                joke = ['先進船的人會先說什麼' + '\n' + '會說online' + '\n' + '\n'+ '\n'+ '\n'+ '\n'+ '\n'+ '\n' + '\n' + '因為仙境傳說online',
-                        '有一天，有一隻深海魚在海裡自由自在得游啊游，但他一點也不開心，為什麼?' + '\n'+ '\n'+ '\n'+ '\n'+ '\n'+'\n'+'\n'+'\n' '因為他壓力好大']
-                if event.message.text[0:2] == '我是':
-                    a = input_lineid(NAME=event.message.text[2:], LINE_ID=event.source.sender_id)
-                    line_bot_api.reply_message(  # 回復傳入的訊息文字
-                    event.reply_token,
-                    TextSendMessage(text=a)
+
+                if event.message.text[0:2] == '姓名':
+                    name_start = event.message.text.rfind('姓名')
+                    name_end = event.message.text.find('/')
+                    Name = event.message.text[name_start + 3:name_end]
+                    studentID_start = event.message.text.rfind('學號')
+                    studentID_end = event.message.text.rfind('學號') + 12
+                    student_ID = event.message.text[studentID_start + 3:studentID_end]
+                    print(Name)
+                    print(student_ID)
+                    i = name_studentID(name = Name, studentID = student_ID, LINE_ID=event.source.sender_id)
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextSendMessage(text=i)
                     )
 
-                elif event.message.text == '傳提醒':
-                    line_bot_api.push_message('Uc2a7965147869ebe3b5febb6fb3737a4', TextSendMessage(text='hello world!'))
+                elif event.message.text == "查詢":
+                    buttons_template = TemplateSendMessage(
+                        alt_text='查詢功能',
+                        template=ButtonsTemplate(
+                            title='查詢之功能',
+                            text='選擇你所想要查詢之功能',
+                            actions=[
+                                MessageTemplateAction(
+                                    label='作業成績',
+                                    text='作業成績'
+                                ),
+                                MessageTemplateAction(
+                                    label='作業完成度',
+                                    text='作業完成度'
+                                ),
+                                MessageTemplateAction(
+                                    label='未交作業',
+                                    text='未交作業'
+                                )
+                            ]
+                        )
+                    )
+                    line_bot_api.reply_message(event.reply_token, buttons_template)
 
                 elif event.message.text == '作業成績':
                     b = search_grade(event.source.sender_id)
-                    line_bot_api.reply_message(  # 回復傳入的訊息文字
+                    line_bot_api.reply_message(
                         event.reply_token,
                         TextSendMessage(text = b)
                     )
@@ -268,7 +269,7 @@ def callback(request):
                     )
 
                 elif event.message.text == '講笑話':
-                    e = '不要'
+                    e = joke()
                     line_bot_api.reply_message(
                         event.reply_token,
                         TextSendMessage(text=e)
@@ -281,7 +282,7 @@ def callback(request):
                         TextSendMessage(text=g)
                     )
                 else:
-                    f = '我看不懂你在說什麼，請輸入'+'\n'+'「查詢功能」'+'\n'+'來查看可以使用的功能。'+'\n'+'講個笑話給你聽吧！'+ '\n'+ '\n'+'\n'+choice(joke)
+                    f = '我看不懂你在說什麼，請輸入'+'\n'+'「查詢功能」'+'\n'+'來查看可以使用的功能。'+'\n'+'講個笑話給你聽吧！'+ '\n'+ '\n'+'\n'+joke()
                     line_bot_api.reply_message(
                         event.reply_token,
                         TextSendMessage(text=f)
