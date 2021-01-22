@@ -1,6 +1,7 @@
 '''
 我們用django來寫line機器人背後的程式，詳細的django環境建置、如何與line機器人連接我會再錄成影片
 現在先解釋views.py檔案裡在幹嘛~~~
+提醒我自己：全部完成之後記得寫成class
 '''
 # render是要將元素渲染到網頁上讓它呈現，但是我們這裡只有要將資料打包回傳給line機器人而已，所以暫時用不到render
 # from django.shortcuts import render
@@ -120,7 +121,7 @@ def hw_finished_percent(LINE_ID):
             out_df = df[df.loc[:, "LINE_ID"] == LINE_ID ]
             finished_percent = out_df['hw_finished'].values[0]
         except:
-            finished_percent = '你還沒有輸入名字喔！請輸入名字，格式：我是OOO'
+            finished_percent = '你還沒有輸入名字喔！請輸入名字，格式：'+'\n'+'姓名：王小明/學號：B54012312'
     return finished_percent
 
 # 查詢還沒完成的作業
@@ -147,11 +148,35 @@ def hw_unfinished(LINE_ID):
             if g==0:
                 h='所有作業都完成囉！'
         except:
-            h = '你還沒有輸入名字喔！請輸入名字，格式：我是OOO'
+            h = '你還沒有輸入名字喔！請輸入名字，格式：'+'\n'+'姓名：王小明/學號：B54012312'
 
     return h
 
-def name_studentID(name, studentID, LINE_ID):
+# 註冊
+def register_lineid(name, studentID, LINE_ID):
+    with open('D:/NCKU/109-1/computational_thinking/code/grade_1213.csv', encoding="utf-8") as response:
+        csv_table = csv.reader(response)
+        df = pd.DataFrame(csv_table)
+        df.columns = df.iloc[0]
+        df = df.reindex(df.index.drop(0))
+        for i in range(30):
+
+            if (df.loc[i + 1, 'Name'] == name):
+                if df.loc[i + 1, 'ID'] == studentID:
+                    if df.loc[i + 1, 'line_id'] == '':
+                        df.loc[i + 1, 'line_id'] = LINE_ID
+                        success_message = '成功紀錄！請從選單點選要使用的功能'
+                    elif df.loc[i + 1, 'line_id'] == LINE_ID:
+                        success_message = '你已經註冊過囉！'
+                    else:
+                        success_message = '此用戶已被註冊！這不是你，請聯絡管理人'
+                else:
+                    success_message = '學號輸入錯誤，學號開頭請用大寫英文字母，請再輸入一次。格式：'+'\n'+'姓名：王小明/學號：B54012312'
+                break
+            else:
+                success_message = '修課名單找不到這個名字，請重新輸入。格式：'+'\n'+'姓名：王小明/學號：B54012312'
+        df.to_csv('D:/NCKU/109-1/computational_thinking/code/final_record.csv', index=False)
+
     with open('D:/NCKU/109-1/computational_thinking/code/final_record.csv', encoding="utf-8") as response:
         csv_table = csv.reader(response)
         df = pd.DataFrame(csv_table)
@@ -163,18 +188,19 @@ def name_studentID(name, studentID, LINE_ID):
                 if df.loc[i + 1, 'Student_ID'] == studentID:
                     if df.loc[i + 1, 'LINE_ID'] == '':
                         df.loc[i + 1, 'LINE_ID'] = LINE_ID
-                        success_message = '成功紀錄! 請輸入 查詢功能 ，查看可以使用的功能'
+                        success_message = '成功紀錄！請從選單點選要使用的功能'
                     elif df.loc[i + 1, 'LINE_ID'] == LINE_ID:
                         success_message = '你已經註冊過囉！'
                     else:
                         success_message = '此用戶已被註冊！這不是你，請聯絡管理人'
                 else:
-                    success_message = '學號輸入錯誤，學號開頭請用大寫英文字母，請再輸入一次。格式：姓名：王小明/學號：B54012312'
+                    success_message = '學號輸入錯誤，學號開頭請用大寫英文字母，請再輸入一次。格式：'+'\n'+'姓名：王小明/學號：B54012312'
                 break
             else:
                 success_message = '修課名單找不到這個名字，請重新輸入'
 
         df.to_csv('D:/NCKU/109-1/computational_thinking/code/final_record.csv', index=False)
+
     return success_message
 
 # from django.core.handlers.wsgi import WSGIRequest
@@ -196,8 +222,6 @@ def callback(request):
         # test(request)
         signature = request.META['HTTP_X_LINE_SIGNATURE']
         body = request.body.decode('utf-8')
-
-
         try:
             events = parser.parse(body, signature)  # 傳入的事件
         except InvalidSignatureError:
@@ -217,13 +241,13 @@ def callback(request):
                     student_ID = event.message.text[studentID_start + 3:studentID_end]
                     print(Name)
                     print(student_ID)
-                    i = name_studentID(name = Name, studentID = student_ID, LINE_ID=event.source.sender_id)
+                    i = register_lineid(name = Name, studentID = student_ID, LINE_ID=event.source.sender_id)
                     line_bot_api.reply_message(
                         event.reply_token,
                         TextSendMessage(text=i)
                     )
 
-                elif event.message.text == "查詢":
+                elif event.message.text == "查詢功能":
                     buttons_template = TemplateSendMessage(
                         alt_text='查詢功能',
                         template=ButtonsTemplate(
@@ -254,12 +278,12 @@ def callback(request):
                         TextSendMessage(text = b)
                     )
 
-                elif event.message.text == '查詢功能':
-                    c='可以使用的功能'+'\n'+'1. 查詢累計作業成績請輸入：作業成績'+'\n'+'2. 查詢作業完成度請輸入：作業完成度'+'\n'+'3. 查詢沒有交的作業：未交作業'
-                    line_bot_api.reply_message(
-                        event.reply_token,
-                        TextSendMessage(text = c)
-                    )
+                # elif event.message.text == '查詢功能':
+                #     c='可以使用的功能'+'\n'+'1. 查詢累計作業成績請輸入：作業成績'+'\n'+'2. 查詢作業完成度請輸入：作業完成度'+'\n'+'3. 查詢沒有交的作業：未交作業'
+                #     line_bot_api.reply_message(
+                #         event.reply_token,
+                #         TextSendMessage(text = c)
+                #     )
 
                 elif event.message.text == '作業完成度':
                     d = hw_finished_percent(event.source.sender_id)
@@ -270,10 +294,15 @@ def callback(request):
 
                 elif event.message.text == '講笑話':
                     e = joke()
+                    string = ''
+                    for i in e:
+                        string += i
+                        string += '\n'
                     line_bot_api.reply_message(
                         event.reply_token,
-                        TextSendMessage(text=e)
+                        TextSendMessage(text=string)
                     )
+
                 elif event.message.text == '未交作業':
                     g = hw_unfinished(event.source.sender_id)
 
@@ -282,7 +311,12 @@ def callback(request):
                         TextSendMessage(text=g)
                     )
                 else:
-                    f = '我看不懂你在說什麼，請輸入'+'\n'+'「查詢功能」'+'\n'+'來查看可以使用的功能。'+'\n'+'講個笑話給你聽吧！'+ '\n'+ '\n'+'\n'+joke()
+                    e = joke()
+                    string = ''
+                    for i in e:
+                        string += i
+                        string += '\n'
+                    f = '我看不懂你在說什麼，請輸入'+'\n'+'「查詢功能」'+'\n'+'來查看可以使用的功能。'+'\n'+'講個笑話給你聽吧！'+ '\n'+ '\n'+'\n'+string
                     line_bot_api.reply_message(
                         event.reply_token,
                         TextSendMessage(text=f)
