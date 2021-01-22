@@ -1,5 +1,7 @@
 # LineBot
 交作業提醒機器人
 ##### 主程式：lineBotEnv/mylinebot/homeworklinebot/views.py
+##### 爬蟲程式：facebook_group_crawler.py
+##### 未交作業主動通知：push_message_hw_unfinished.py
 ##### 爬蟲存下來的csv檔：csv_files/
-##### rich menu的圖片：controllers.jpg
+##### rich menu的圖片：controller.jpg
