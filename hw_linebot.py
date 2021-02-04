@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
 import csv
@@ -97,33 +97,33 @@ def search_grade(LINE_ID):
             out_df = df[df.loc[:, "line_id"] == LINE_ID ]
             grade_value = out_df['Sum'].values[0]
         except:
-            grade_value = '你還沒有輸入名字喔！請輸入名字，格式：我是OOO'
+            grade_value = '你還沒有輸入名字喔！請輸入名字，格式：姓名：沈姵昕/學號'
     return grade_value
 
 # 註冊
 def register_lineid(name, studentID, LINE_ID):
-    with open('D:/NCKU/109-1/computational_thinking/code/grade_1213.csv', encoding="utf-8") as response:
-        csv_table = csv.reader(response)
-        df = pd.DataFrame(csv_table)
-        df.columns = df.iloc[0]
-        df = df.reindex(df.index.drop(0))
-        for i in range(30):
-
-            if (df.loc[i + 1, 'Name'] == name):
-                if df.loc[i + 1, 'ID'] == studentID:
-                    if df.loc[i + 1, 'line_id'] == '':
-                        df.loc[i + 1, 'line_id'] = LINE_ID
-                        success_message = '成功紀錄！請從選單點選要使用的功能'
-                    elif df.loc[i + 1, 'line_id'] == LINE_ID:
-                        success_message = '你已經註冊過囉！'
-                    else:
-                        success_message = '此用戶已被註冊！這不是你，請聯絡管理人'
-                else:
-                    success_message = '學號輸入錯誤，學號開頭請用大寫英文字母，請再輸入一次。格式：'+'\n'+'姓名：王小明/學號：B54012312'
-                break
-            else:
-                success_message = '修課名單找不到這個名字，請重新輸入。格式：'+'\n'+'姓名：王小明/學號：B54012312'
-        df.to_csv('D:/NCKU/109-1/computational_thinking/code/1212.csv', index=False)
+    # with open('D:/NCKU/109-1/computational_thinking/code/grade_1213.csv', encoding="utf-8") as response:
+    #     csv_table = csv.reader(response)
+    #     df = pd.DataFrame(csv_table)
+    #     df.columns = df.iloc[0]
+    #     df = df.reindex(df.index.drop(0))
+    #     for i in range(30):
+    #
+    #         if (df.loc[i + 1, 'Name'] == name):
+    #             if df.loc[i + 1, 'ID'] == studentID:
+    #                 if df.loc[i + 1, 'line_id'] == '':
+    #                     df.loc[i + 1, 'line_id'] = LINE_ID
+    #                     success_message = '成功紀錄！請從選單點選要使用的功能'
+    #                 elif df.loc[i + 1, 'line_id'] == LINE_ID:
+    #                     success_message = '你已經註冊過囉！'
+    #                 else:
+    #                     success_message = '此用戶已被註冊！這不是你，請聯絡管理人'
+    #             else:
+    #                 success_message = '學號輸入錯誤，學號開頭請用大寫英文字母，請再輸入一次。格式：'+'\n'+'姓名：王小明/學號：B54012312'
+    #             break
+    #         else:
+    #             success_message = '修課名單找不到這個名字，請重新輸入。格式：'+'\n'+'姓名：王小明/學號：B54012312'
+    #     df.to_csv('D:/NCKU/109-1/computational_thinking/code/1212.csv', index=False)
 
     with open('D:/NCKU/109-1/computational_thinking/hw_linebot/final_record.csv', encoding="utf-8") as response:
         csv_table = csv.reader(response)
@@ -131,7 +131,6 @@ def register_lineid(name, studentID, LINE_ID):
         df.columns = df.iloc[0]
         df = df.reindex(df.index.drop(0))
         for i in range(30):
-
             if (df.loc[i + 1, 'NAME'] == name):
                 if df.loc[i + 1, 'Student_ID'] == studentID:
                     if df.loc[i + 1, 'LINE_ID'] == '':
@@ -212,7 +211,8 @@ def callback():
     return 'OK'
 
 
-
+# @handler.add(MessageEvent, message=TextMessage)表示當收到訊息事件而且是文字的時候，就執行下方程式碼
+# line events: https://developers.line.biz/en/reference/messaging-api/#webhook-event-objects
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     if event.message.text[0:2] == '姓名':
@@ -225,7 +225,9 @@ def handle_message(event):
         i = register_lineid(name=Name, studentID=student_ID, LINE_ID=event.source.user_id)
         line_bot_api.reply_message(
             event.reply_token,
+            # 每則訊息會有一個專屬的reply token，拿著這個token可以再收到訊息後向使用者回傳訊息，用完就不見了
             TextSendMessage(text=i)
+            # ImageSendMessage, VideoSendMessage......
         )
 
     elif event.message.text == "查詢功能":
